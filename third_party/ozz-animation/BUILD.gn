@@ -1,0 +1,53 @@
+declare_args() {
+}
+
+import("../third_party.gni")
+
+third_party("ozz-animation") {
+  public_include_dirs = [ 
+    "../externals/ozz-animation/include",
+    "../externals/ozz-animation/src",
+  ]
+
+  sources = [
+    "../externals/ozz-animation/src/animation/offline/additive_animation_builder.cc",
+    "../externals/ozz-animation/src/animation/offline/animation_builder.cc",
+    "../externals/ozz-animation/src/animation/offline/animation_optimizer.cc",
+    "../externals/ozz-animation/src/animation/offline/decimate.h",
+    "../externals/ozz-animation/src/animation/offline/raw_animation.cc",
+    "../externals/ozz-animation/src/animation/offline/raw_animation_archive.cc",
+    "../externals/ozz-animation/src/animation/offline/raw_animation_utils.cc",
+    "../externals/ozz-animation/src/animation/offline/raw_skeleton.cc",
+    "../externals/ozz-animation/src/animation/offline/raw_skeleton_archive.cc",
+    "../externals/ozz-animation/src/animation/offline/raw_track.cc",
+    "../externals/ozz-animation/src/animation/offline/skeleton_builder.cc",
+    "../externals/ozz-animation/src/animation/offline/track_builder.cc",
+    "../externals/ozz-animation/src/animation/offline/track_optimizer.cc",
+    "../externals/ozz-animation/src/animation/runtime/animation.cc",
+    "../externals/ozz-animation/src/animation/runtime/animation_keyframe.h",
+    "../externals/ozz-animation/src/animation/runtime/animation_utils.cc",
+    "../externals/ozz-animation/src/animation/runtime/blending_job.cc",
+    "../externals/ozz-animation/src/animation/runtime/ik_aim_job.cc",
+    "../externals/ozz-animation/src/animation/runtime/ik_two_bone_job.cc",
+    "../externals/ozz-animation/src/animation/runtime/local_to_model_job.cc",
+    "../externals/ozz-animation/src/animation/runtime/sampling_job.cc",
+    "../externals/ozz-animation/src/animation/runtime/skeleton.cc",
+    "../externals/ozz-animation/src/animation/runtime/skeleton_utils.cc",
+    "../externals/ozz-animation/src/animation/runtime/track.cc",
+    "../externals/ozz-animation/src/animation/runtime/track_sampling_job.cc",
+    "../externals/ozz-animation/src/animation/runtime/track_triggering_job.cc",
+    "../externals/ozz-animation/src/base/log.cc",
+    "../externals/ozz-animation/src/base/platform.cc",
+    "../externals/ozz-animation/src/base/containers/string_archive.cc",
+    "../externals/ozz-animation/src/base/io/archive.cc",
+    "../externals/ozz-animation/src/base/io/stream.cc",
+    "../externals/ozz-animation/src/base/maths/box.cc",
+    "../externals/ozz-animation/src/base/maths/math_archive.cc",
+    "../externals/ozz-animation/src/base/maths/simd_math.cc",
+    "../externals/ozz-animation/src/base/maths/simd_math_archive.cc",
+    "../externals/ozz-animation/src/base/maths/soa_math_archive.cc",
+    "../externals/ozz-animation/src/base/memory/allocator.cc",
+    "../externals/ozz-animation/src/geometry/runtime/skinning_job.cc",
+    "../externals/ozz-animation/src/options/options.cc",
+  ]
+}

@@ -3098,6 +3098,7 @@ if (skia_enable_tools) {
         "modules/skshaper:skshaper",
         "modules/svg",
         "//third_party/imgui",
+        "//third_party/ozz-animation",
       ]
       if (skia_use_vulkan) {
         deps += [

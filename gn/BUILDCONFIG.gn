@@ -137,6 +137,8 @@ if (target_os == "win") {
                         # directory.
 }
 
+win_vc = "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC"
+win_sdk = "D:\\Windows Kits\\10"
 if (target_os == "win") {
   if (win_toolchain_version == "") {
     win_toolchain_version = exec_script("//gn/highest_version_dir.py",
@@ -146,6 +148,7 @@ if (target_os == "win") {
                                         ],
                                         "trim string")
   }
+
   if (win_sdk_version == "") {
     win_sdk_version = exec_script("//gn/highest_version_dir.py",
                                   [

@@ -5,8 +5,8 @@
 * found in the LICENSE file.
 */
 
-#ifndef HelloWorld_DEFINED
-#define HelloWorld_DEFINED
+#ifndef HarmonyLightingEffect_DEFINED
+#define HarmonyLightingEffect_DEFINED
 
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypes.h"
@@ -18,10 +18,10 @@
 
 class SkSurface;
 
-class HelloWorld : public sk_app::Application, sk_app::Window::Layer {
+class HarmonyLightingEffect : public sk_app::Application, sk_app::Window::Layer {
 public:
-    HelloWorld(int argc, char** argv, void* platformData);
-    ~HelloWorld() override;
+    HarmonyLightingEffect(int argc, char** argv, void* platformData);
+    ~HarmonyLightingEffect() override;
 
     void onIdle() override;
 

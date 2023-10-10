@@ -197,8 +197,14 @@ void AcrylicEffect::onPaint(SkSurface* surface) {
                                       region.y() + borderSize,
                                       region.width() - borderSize * 2.0f,
                                       region.height() - borderSize * 2.0f);
-
-    auto blur = SkImageFilters::Blur(20, 20, SkTileMode::kClamp, nullptr, region);
+    
+    float outSize = 10.0f;
+    auto outRect = SkRect::MakeXYWH(region.x() - outSize,
+                                    region.y() - outSize,
+                                    region.width() + outSize * 2.0f,
+                                    region.height() + outSize * 2.0f);
+    
+    auto blur = SkImageFilters::Blur(20, 20, SkTileMode::kClamp, nullptr, outRect);
 
     std::shared_ptr<SkRuntimeShaderBuilder> blurEffectBuilder = GetBlurEffectShaderBuilder();
     blurEffectBuilder->uniform("rectangle") =
@@ -211,7 +217,7 @@ void AcrylicEffect::onPaint(SkSurface* surface) {
     auto innterBlur_otherOrigin_filter = SkImageFilters::RuntimeShader(*blurEffectBuilder.get(), childShaderNames, inputs, 2);
 
     SkCanvas::SaveLayerRec offsetScreenRect(
-            &region, nullptr, innterBlur_otherOrigin_filter.get(), 0);
+            &outRect, nullptr, innterBlur_otherOrigin_filter.get(), 0);
     canvas->saveLayer(offsetScreenRect); // new layer with region
 
     // draw round rect

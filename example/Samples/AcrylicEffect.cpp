@@ -102,8 +102,21 @@ static std::shared_ptr<SkRuntimeShaderBuilder> GetBlurEffectShaderBuilder() {
         // Simplified version of SDF (signed distance function) for a rounded box
         // from https://www.iquilezles.org/www/articles/distfunctions2d/distfunctions2d.htm
         float roundedRectangleSDF(vec2 position, vec2 box, float radius) {
+            // vec2 q = abs(position) - box + vec2(radius);
+            // return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
+
             vec2 q = abs(position) - box + vec2(radius);
-            return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
+            // out rect
+            if (q.x > radius || q.y > radius) {
+                return 1.0;
+            }
+            
+            // out round rect
+            if (q.x > 0.0 && q.x < radius && q.y > 0.0 && q.y < radius && length(q) > radius) {
+                return 1.0;
+            }
+
+            return -1.0;
         }
 
         vec4 main(vec2 coord) {
@@ -119,7 +132,13 @@ static std::shared_ptr<SkRuntimeShaderBuilder> GetBlurEffectShaderBuilder() {
             }
 
             vec4 b = blur.eval(coord);
-            return b;
+
+            // How far are we from the top-left corner?
+            float lightenFactor = min(1.0, length(coord - rectangle.xy) / (0.85 * length(rectangle.zw - rectangle.xy)));
+            // Shift towards white, by 35% in top left corner, down to 10% in bottom right corner
+            return b + (vec4(1.0) - b) * (0.35 - 0.25 * lightenFactor);
+
+            // return b;
         }
     )");
 
@@ -172,9 +191,8 @@ void AcrylicEffect::onPaint(SkSurface* surface) {
     }
 
     SkRect region = SkRect::MakeXYWH(86, 111, 318, 178);
-    SkScalar rx = 20;
-    SkScalar ry = 20;
-    float borderSize = 3.0f;
+    SkScalar radius = 20;
+    float borderSize = 4.0f;
     auto innerRect = SkRect::MakeXYWH(region.x() + borderSize,
                                       region.y() + borderSize,
                                       region.width() - borderSize * 2.0f,
@@ -182,24 +200,25 @@ void AcrylicEffect::onPaint(SkSurface* surface) {
 
     auto blur = SkImageFilters::Blur(20, 20, SkTileMode::kClamp, nullptr, region);
 
-    /*std::shared_ptr<SkRuntimeShaderBuilder> blurEffectBuilder = GetBlurEffectShaderBuilder();
-    float density = 1.0f;
+    std::shared_ptr<SkRuntimeShaderBuilder> blurEffectBuilder = GetBlurEffectShaderBuilder();
     blurEffectBuilder->uniform("rectangle") =
-            SkV4{85.0f * density, 110.0f * density, 405.0f * density, 290.0f * density};
-    blurEffectBuilder->uniform("radius") = 20.0f * density;
+            SkV4{region.left(), region.top(), region.right(), region.bottom()};
+    blurEffectBuilder->uniform("radius") = radius;
 
     std::string_view childShaderNames[] = {"content", "blur"};
     sk_sp<SkImageFilter> inputs[] = {nullptr, blur};
 
-    auto customBlur = SkImageFilters::RuntimeShader(*blurEffectBuilder.get(), childShaderNames, inputs, 2);*/
+    auto innterBlur_otherOrigin_filter = SkImageFilters::RuntimeShader(*blurEffectBuilder.get(), childShaderNames, inputs, 2);
 
-    SkCanvas::SaveLayerRec offsetScreenRect(&region, nullptr, blur.get(), 0);
+    SkCanvas::SaveLayerRec offsetScreenRect(
+            &region, nullptr, innterBlur_otherOrigin_filter.get(), 0);
     canvas->saveLayer(offsetScreenRect); // new layer with region
 
     // draw round rect
     {
-        canvas->clipRRect(SkRRect::MakeRectXY(region, rx, ry), true);
-        canvas->clipRRect(SkRRect::MakeRectXY(innerRect, rx, ry), SkClipOp::kDifference, true);
+        canvas->clipRRect(SkRRect::MakeRectXY(region, radius, radius), true);
+        canvas->clipRRect(
+                SkRRect::MakeRectXY(innerRect, radius, radius), SkClipOp::kDifference, true);
 
         SkPoint linearPoints[] = {{region.x(), region.y()}, {region.right(), region.bottom()}};
         SkColor linearColors[] = {0x80FFFFFF, 0x00FFFFFF, 0x00FF48DB, 0x80FF48DB};
@@ -210,7 +229,7 @@ void AcrylicEffect::onPaint(SkSurface* surface) {
         paint.setAntiAlias(true);
         paint.setStrokeWidth(2);
 
-        canvas->drawRoundRect(region, rx, ry, paint);
+        canvas->drawRoundRect(region, radius, radius, paint);
     }
 
     canvas->restore();

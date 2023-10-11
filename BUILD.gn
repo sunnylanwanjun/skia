@@ -3112,7 +3112,11 @@ if (skia_enable_tools) {
 
   if (skia_use_gl && !skia_use_angle && (is_linux || is_win || is_mac)) {
     test_app("HelloWorld") {
-      sources = [ "example/HelloWorld.cpp" ]
+      sources = [ 
+        "example/HelloWorld.cpp",
+        "example/Samples/HarmonyLightingEffect.cpp",
+        "example/Samples/AcrylicEffect.cpp",
+      ]
       libs = []
 
       deps = [

@@ -284,28 +284,3 @@ bool AcrylicEffect::onChar(SkUnichar c, skui::ModifierKey modifiers) {
     }
     return true;
 }
-
-bool AcrylicEffect::onMouse(int x, int y, skui::InputState state, skui::ModifierKey modifiers) {
-    mousePos = {float(x), float(y)};
-
-    switch (state) {
-        case skui::InputState::kUp: {
-            // SkDebugf("AcrylicEffect::onMouse Up x=%d, y=%d\n", x, y);
-            break;
-        }
-        case skui::InputState::kDown: {
-            // SkDebugf("AcrylicEffect::onMouse Down x=%d, y=%d\n", x, y);
-            break;
-        }
-        case skui::InputState::kMove: {
-            // SkDebugf("AcrylicEffect::onMouse Move x=%d, y=%d\n", x, y);
-            break;
-        }
-        default: {
-            SkASSERT(false);  // shouldn't see kRight or kLeft here
-            break;
-        }
-    }
-    
-    return true;
-}

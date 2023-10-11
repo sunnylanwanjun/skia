@@ -106,14 +106,21 @@ static std::shared_ptr<SkRuntimeShaderBuilder> GetBlurEffectShaderBuilder() {
             // return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
 
             vec2 q = abs(position) - box + vec2(radius);
+            float lenQ = length(q);
+
             // out rect
             if (q.x > radius || q.y > radius) {
-                return 1.0;
+                // round corner
+                if (q.x > radius && q.y > radius) {
+                    return lenQ - radius;
+                }
+                // edge
+                return max(q.x, q.y) - radius;
             }
             
             // out round rect
-            if (q.x > 0.0 && q.x < radius && q.y > 0.0 && q.y < radius && length(q) > radius) {
-                return 1.0;
+            if (q.x > 0.0 && q.x < radius && q.y > 0.0 && q.y < radius && lenQ > radius) {
+                return lenQ - radius;
             }
 
             return -1.0;
@@ -128,6 +135,17 @@ static std::shared_ptr<SkRuntimeShaderBuilder> GetBlurEffectShaderBuilder() {
             vec4 c = content.eval(coord);
             if (distanceToClosestEdge > 0.0) {
                 // We're outside of the filtered area
+                // We're outside of the filtered area
+                float dropShadowSize = 20.0;
+                if (distanceToClosestEdge < dropShadowSize) {
+                    // Emulate drop shadow around the filtered area
+                    float darkenFactor = (dropShadowSize - distanceToClosestEdge) / dropShadowSize;
+                    // Use exponential drop shadow decay for more pleasant visuals
+                    darkenFactor = pow(darkenFactor, 1.6);
+                    // Shift towards black, by 10% around the edge, dissipating to 0% further away
+                    // return c * (0.9 + (1.0 - darkenFactor) / 10.0);
+                    return vec4(1.0, 0.0, 0.0, 1.0);
+                }
                 return c;
             }
 
@@ -137,8 +155,6 @@ static std::shared_ptr<SkRuntimeShaderBuilder> GetBlurEffectShaderBuilder() {
             float lightenFactor = min(1.0, length(coord - rectangle.xy) / (0.85 * length(rectangle.zw - rectangle.xy)));
             // Shift towards white, by 35% in top left corner, down to 10% in bottom right corner
             return b + (vec4(1.0) - b) * (0.35 - 0.25 * lightenFactor);
-
-            // return b;
         }
     )");
 
@@ -190,25 +206,21 @@ void AcrylicEffect::onPaint(SkSurface* surface) {
         canvas->drawCircle(205, 125, 25, paint);
     }
 
-    SkRect region = SkRect::MakeXYWH(86, 111, 318, 178);
+    SkRect blurRect = SkRect::MakeXYWH(86, 111, 318, 178);
     SkScalar radius = 20;
     float borderSize = 4.0f;
-    auto innerRect = SkRect::MakeXYWH(region.x() + borderSize,
-                                      region.y() + borderSize,
-                                      region.width() - borderSize * 2.0f,
-                                      region.height() - borderSize * 2.0f);
     
-    float outSize = 10.0f;
-    auto outRect = SkRect::MakeXYWH(region.x() - outSize,
-                                    region.y() - outSize,
-                                    region.width() + outSize * 2.0f,
-                                    region.height() + outSize * 2.0f);
+    float darkenSize = 10.0f;
+    auto wholeRect = SkRect::MakeXYWH(blurRect.x() - darkenSize,
+                                    blurRect.y() - darkenSize,
+                                    blurRect.width() + darkenSize * 2.0f,
+                                    blurRect.height() + darkenSize * 2.0f);
     
-    auto blur = SkImageFilters::Blur(20, 20, SkTileMode::kClamp, nullptr, outRect);
+    auto blur = SkImageFilters::Blur(20, 20, SkTileMode::kClamp, nullptr, wholeRect);
 
     std::shared_ptr<SkRuntimeShaderBuilder> blurEffectBuilder = GetBlurEffectShaderBuilder();
     blurEffectBuilder->uniform("rectangle") =
-            SkV4{region.left(), region.top(), region.right(), region.bottom()};
+            SkV4{blurRect.left(), blurRect.top(), blurRect.right(), blurRect.bottom()};
     blurEffectBuilder->uniform("radius") = radius;
 
     std::string_view childShaderNames[] = {"content", "blur"};
@@ -217,16 +229,21 @@ void AcrylicEffect::onPaint(SkSurface* surface) {
     auto innterBlur_otherOrigin_filter = SkImageFilters::RuntimeShader(*blurEffectBuilder.get(), childShaderNames, inputs, 2);
 
     SkCanvas::SaveLayerRec offsetScreenRect(
-            &outRect, nullptr, innterBlur_otherOrigin_filter.get(), 0);
+            &wholeRect, nullptr, innterBlur_otherOrigin_filter.get(), 0);
     canvas->saveLayer(offsetScreenRect); // new layer with region
 
     // draw round rect
     {
-        canvas->clipRRect(SkRRect::MakeRectXY(region, radius, radius), true);
-        canvas->clipRRect(
-                SkRRect::MakeRectXY(innerRect, radius, radius), SkClipOp::kDifference, true);
+        auto noRimLightRect = SkRect::MakeXYWH(blurRect.x() + borderSize,
+                                          blurRect.y() + borderSize,
+                                          blurRect.width() - borderSize * 2.0f,
+                                          blurRect.height() - borderSize * 2.0f);
 
-        SkPoint linearPoints[] = {{region.x(), region.y()}, {region.right(), region.bottom()}};
+        canvas->clipRRect(SkRRect::MakeRectXY(blurRect, radius, radius), true);
+        canvas->clipRRect(
+                SkRRect::MakeRectXY(noRimLightRect, radius, radius), SkClipOp::kDifference, true);
+
+        SkPoint linearPoints[] = {{blurRect.x(), blurRect.y()}, {blurRect.right(), blurRect.bottom()}};
         SkColor linearColors[] = {0x80FFFFFF, 0x00FFFFFF, 0x00FF48DB, 0x80FF48DB};
 
         SkPaint paint;
@@ -235,7 +252,7 @@ void AcrylicEffect::onPaint(SkSurface* surface) {
         paint.setAntiAlias(true);
         paint.setStrokeWidth(2);
 
-        canvas->drawRoundRect(region, radius, radius, paint);
+        canvas->drawRoundRect(blurRect, radius, radius, paint);
     }
 
     canvas->restore();
